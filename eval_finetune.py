@@ -1,5 +1,5 @@
 import argparse, os, sys, time, gc, datetime
-from models.module import focal_loss_bld, refine_mvsnet_loss
+from models.module import refine_mvsnet_loss
 import torch
 import torch.nn as nn
 import torch.nn.parallel
@@ -651,7 +651,6 @@ if __name__ == '__main__':
     model.resample[2].register_forward_hook(forward_hook)
 
     model.to(device)
-    # model_loss = focal_loss_bld
     model_loss = refine_mvsnet_loss
 
     if args.sync_bn:

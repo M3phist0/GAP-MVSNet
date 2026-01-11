@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-MVS_TRAINING="/mnt/sharedisk/chenkehua/DTU/mvs_training/dtu" # path to dataset mvs_training
-NORMAL_PATH="/mnt/sharedisk/chenkehua/networks/Lotus/output/dtutrain"
-#NORMAL_PATH="/mnt/sharedisk/chenkehua/GS+Nerf/CityGaussian/utils/da2_train"
-#NORMAL_PATH="/mnt/sharedisk/chenkehua/networks/GoMVS/GT_Normal"
+MVS_TRAINING="/root/gpufree-data/dtu_training/mvs_training/dtu" # path to dataset mvs_training
+NORMAL_PATH="/root/gpufree-data/GAP-MVSNet/dtu_normal"
 LOG_DIR="./outputs/dtu_training" # path to checkpoints
 if [ ! -d $LOG_DIR ]; then
 	mkdir -p $LOG_DIR
@@ -10,7 +8,7 @@ fi
 
 NGPUS=4
 BATCH_SIZE=1
-CUDA_VISIBLE_DEVICES=4,5,6,7 python -m torch.distributed.launch --nproc_per_node=$NGPUS --master_port=8888 train.py \
+CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=$NGPUS --master_port=8889 train.py \
 	--logdir=$LOG_DIR \
 	--dataset=dtu_yao \
 	--batch_size=$BATCH_SIZE \

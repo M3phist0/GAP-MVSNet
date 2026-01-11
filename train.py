@@ -11,7 +11,6 @@ from models import *
 from utils import *
 import torch.distributed as dist
 
-# os.environ['CUDA_VISIBLE_DEVICES'] = "4,5"
 cudnn.benchmark = True
 
 parser = argparse.ArgumentParser(description='official Implementation of GAPMVSNet')
@@ -82,13 +81,6 @@ def train(model, model_loss, optimizer, TrainImgLoader, TestImgLoader, start_epo
             if (not is_distributed) or (dist.get_rank() == 0):
                 if do_summary:
                     save_scalars(logger, 'train', scalar_outputs, global_step)
-                    # print(
-                    #    "Epoch {}/{}, Iter {}/{}, lr {:.6f}, train loss = {:.3f}, depth loss = {:.3f}, entropy loss = {:.3f}, time = {:.3f}".format(
-                    #        epoch_idx, args.epochs, batch_idx, len(TrainImgLoader),
-                    #        optimizer.param_groups[0]["lr"], loss,
-                    #        scalar_outputs['depth_loss'],
-                    #        scalar_outputs['entropy_loss'],
-                    #        time.time() - start_time))
                     print(
                        "Epoch {}/{}, Iter {}/{}, lr {:.6f}, train loss = {:.3f}, depth loss = {:.3f}, entropy loss = {:.3f}, refined loss = {:.3f}, time = {:.3f}".format(
                            epoch_idx, args.epochs, batch_idx, len(TrainImgLoader),
@@ -97,12 +89,7 @@ def train(model, model_loss, optimizer, TrainImgLoader, TestImgLoader, start_epo
                            scalar_outputs['entropy_loss'],
                            scalar_outputs['refined_loss'],
                            time.time() - start_time))
-                    # print(
-                    #    "Epoch {}/{}, Iter {}/{}, lr {:.6f}, train loss = {:.3f}, depth loss = {:.3f}, time = {:.3f}".format(
-                    #        epoch_idx, args.epochs, batch_idx, len(TrainImgLoader),
-                    #        optimizer.param_groups[0]["lr"], loss,
-                    #        scalar_outputs['depth_loss'],
-                    #        time.time() - start_time))
+                    
                 del scalar_outputs, image_outputs
 
         # checkpoint
@@ -126,13 +113,6 @@ def train(model, model_loss, optimizer, TrainImgLoader, TestImgLoader, start_epo
                 if (not is_distributed) or (dist.get_rank() == 0):
                     if do_summary:
                         save_scalars(logger, 'test', scalar_outputs, global_step)
-                        # print("Epoch {}/{}, Iter {}/{}, test loss = {:.3f}, depth loss = {:.3f}, entropy loss = {:.3f}, time = {:3f}".format(
-                        #                                                     epoch_idx, args.epochs,
-                        #                                                     batch_idx,
-                        #                                                     len(TestImgLoader), loss,
-                        #                                                     scalar_outputs["depth_loss"],
-                        #                                                     scalar_outputs['entropy_loss'],
-                        #                                                     time.time() - start_time))
                         print("Epoch {}/{}, Iter {}/{}, test loss = {:.3f}, depth loss = {:.3f}, entropy loss = {:.3f}, refined loss = {:.3f}, time = {:3f}".format(
                                                                             epoch_idx, args.epochs,
                                                                             batch_idx,
@@ -141,12 +121,6 @@ def train(model, model_loss, optimizer, TrainImgLoader, TestImgLoader, start_epo
                                                                             scalar_outputs['entropy_loss'],
                                                                             scalar_outputs['refined_loss'],
                                                                             time.time() - start_time))
-                        # print("Epoch {}/{}, Iter {}/{}, test loss = {:.3f}, depth loss = {:.3f}, time = {:3f}".format(
-                        #                                                     epoch_idx, args.epochs,
-                        #                                                     batch_idx,
-                        #                                                     len(TestImgLoader), loss,
-                        #                                                     scalar_outputs["depth_loss"],
-                        #                                                     time.time() - start_time))
                     avg_test_scalars.update(scalar_outputs)
                     del scalar_outputs, image_outputs
 
@@ -187,15 +161,9 @@ def train_sample(model, model_loss, optimizer, sample, args):
     try:
         outputs = model(sample_cuda["imgs"], sample_cuda["proj_matrices"], sample_cuda["depth_values"], sample_cuda["normal"])
         depth_est = outputs["depth"]
-
-        # ce loss
-        # loss, depth_loss, entropy_loss, depth_entropy = model_loss(outputs, depth_gt_ms, mask_ms, dlossw=[float(e) for e in args.dlossw.split(",") if e])
         
         # ce + refine loss
         loss, depth_loss, entropy_loss, depth_entropy, refined_loss = model_loss(outputs, depth_gt_ms, mask_ms, dlossw=[float(e) for e in args.dlossw.split(",") if e])
-        
-        # reg loss
-        # loss, depth_loss = model_loss(outputs, depth_gt_ms, mask_ms, dlossw=[float(e) for e in args.dlossw.split(",") if e])
 
         if np.isnan(loss.item()):
                 raise NanError
@@ -257,9 +225,7 @@ def test_sample_depth(model, model_loss, sample, args):
     depth_est = outputs["depth"]
     depth_est = outputs["stage1"]["depth"]
 
-    # loss, depth_loss, entropy_loss, depth_entropy = model_loss(outputs, depth_gt_ms, mask_ms, dlossw=[float(e) for e in args.dlossw.split(",") if e])
     loss, depth_loss, entropy_loss, depth_entropy, refined_loss = model_loss(outputs, depth_gt_ms, mask_ms, dlossw=[float(e) for e in args.dlossw.split(",") if e])
-    # loss, depth_loss = model_loss(outputs, depth_gt_ms, mask_ms, dlossw=[float(e) for e in args.dlossw.split(",") if e])
 
     scalar_outputs = {"loss": loss,
                       "depth_loss": depth_loss,
@@ -379,11 +345,7 @@ if __name__ == '__main__':
                           mode=args.mode)
 
     model.to(device)
-    # model_loss = trans_mvsnet_loss
-    # model_loss = mvsnet_loss
     model_loss = refine_mvsnet_loss
-    # model_loss = cas_mvsnet_loss
-    # model_loss = smooth_refine_mvsnet_loss
 
     if args.sync_bn:
         import apex

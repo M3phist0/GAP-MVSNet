@@ -2,3 +2,7 @@
 __pycache__/
 *.pyc
 
+outputs
+dtu_normal
+MoGe/models
+nohup.out
