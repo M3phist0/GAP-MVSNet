@@ -2,9 +2,9 @@
 __pycache__/
 *.pyc
 
-outputs
+*out*
 dtu_normal
 bld_normal
 MoGe/models
-nohup.out
-vis_out
+*.txt
+!requirements.txt
