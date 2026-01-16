@@ -4,5 +4,7 @@ __pycache__/
 
 outputs
 dtu_normal
+bld_normal
 MoGe/models
 nohup.out
+vis_out

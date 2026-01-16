@@ -58,189 +58,6 @@ num_gpus = int(os.environ["WORLD_SIZE"]) if "WORLD_SIZE" in os.environ else 1
 is_distributed = num_gpus > 1
 
 # main function
-# def train(model, model_loss, optimizer, TrainImgLoader, TestImgLoader, start_epoch, args):
-#     milestones = [len(TrainImgLoader) * int(epoch_idx) for epoch_idx in args.lrepochs.split(':')[0].split(',')]
-#     lr_gamma = 1 / float(args.lrepochs.split(':')[1])
-#     lr_scheduler = WarmupMultiStepLR(optimizer, milestones, gamma=lr_gamma, warmup_factor=1.0/3, warmup_iters=500,
-#                                                         last_epoch=len(TrainImgLoader) * start_epoch - 1)
-
-#     for epoch_idx in range(start_epoch, args.epochs):
-#         global_step = len(TrainImgLoader) * epoch_idx
-
-#         # training
-#         if is_distributed:
-#             TrainImgLoader.sampler.set_epoch(epoch_idx)
-#         for batch_idx, sample in enumerate(TrainImgLoader):
-#             start_time = time.time()
-#             global_step = len(TrainImgLoader) * epoch_idx + batch_idx
-#             do_summary = global_step % args.summary_freq == 0
-#             loss, scalar_outputs, image_outputs = train_sample(model, model_loss, optimizer, sample, args)
-#             lr_scheduler.step()
-#             if (not is_distributed) or (dist.get_rank() == 0):
-#                 if do_summary:
-#                     save_scalars(logger, 'train', scalar_outputs, global_step)
-#                     save_images(logger, 'train', image_outputs, global_step)
-#                     print(
-#                        "Epoch {}/{}, Iter {}/{}, lr {:.6f}, train loss = {:.3f}, depth loss = {:.3f}, epe = {:.3f}, less1 = {:.3f}, less3 = {:.3f}, time = {:.3f}".format(
-#                            epoch_idx, args.epochs, batch_idx, len(TrainImgLoader),
-#                            optimizer.param_groups[0]["lr"], loss,
-#                            scalar_outputs['depth_loss'],
-#                            scalar_outputs['epe'],
-#                            scalar_outputs['less1'],
-#                            scalar_outputs['less3'],
-#                            time.time() - start_time))
-#                 del scalar_outputs, image_outputs
-
-#         # checkpoint
-#         if (not is_distributed) or (dist.get_rank() == 0):
-#             if (epoch_idx + 1) % args.save_freq == 0:
-#                 torch.save({
-#                     'epoch': epoch_idx,
-#                     'model': model.module.state_dict(),
-#                     'optimizer': optimizer.state_dict()},
-#                     "{}/model_{:0>6}.ckpt".format(args.logdir, epoch_idx))
-#         gc.collect()
-
-#         # testing
-#         if (epoch_idx % args.eval_freq == 0) or (epoch_idx == args.epochs - 1):
-#             avg_test_scalars = DictAverageMeter()
-#             for batch_idx, sample in enumerate(TestImgLoader):
-#                 start_time = time.time()
-#                 global_step = len(TrainImgLoader) * epoch_idx + batch_idx
-#                 do_summary = global_step % args.summary_freq == 0
-#                 loss, scalar_outputs, image_outputs = test_sample_depth(model, model_loss, sample, args)
-#                 if (not is_distributed) or (dist.get_rank() == 0):
-#                     if do_summary:
-#                         save_scalars(logger, 'test', scalar_outputs, global_step)
-#                         save_images(logger, 'test', image_outputs, global_step)
-#                         print("Epoch {}/{}, Iter {}/{}, test loss = {:.3f}, depth loss = {:.3f}, epe = {:.3f}, less1 = {:.3f}, less3 = {:.3f}, time = {:3f}".format(
-#                                                                             epoch_idx, args.epochs,
-#                                                                             batch_idx,
-#                                                                             len(TestImgLoader), loss,
-#                                                                             scalar_outputs["depth_loss"],
-#                                                                             scalar_outputs['epe'],
-#                                                                             scalar_outputs['less1'],
-#                                                                             scalar_outputs['less3'],
-#                                                                             time.time() - start_time))
-#                     avg_test_scalars.update(scalar_outputs)
-#                     del scalar_outputs, image_outputs
-
-#             if (not is_distributed) or (dist.get_rank() == 0):
-#                 save_scalars(logger, 'fulltest', avg_test_scalars.mean(), global_step)
-#                 print("avg_test_scalars:", avg_test_scalars.mean())
-#             gc.collect()
-
-
-# def test(model, model_loss, TestImgLoader, args):
-#     avg_test_scalars = DictAverageMeter()
-#     for batch_idx, sample in enumerate(TestImgLoader):
-#         start_time = time.time()
-#         loss, scalar_outputs, image_outputs = test_sample_depth(model, model_loss, sample, args)
-#         avg_test_scalars.update(scalar_outputs)
-#         del scalar_outputs, image_outputs
-#         if (not is_distributed) or (dist.get_rank() == 0):
-#             print('Iter {}/{}, test loss = {:.3f}, time = {:3f}'.format(batch_idx, len(TestImgLoader), loss,
-#                                                                         time.time() - start_time))
-#             if batch_idx % 100 == 0:
-#                 print("Iter {}/{}, test results = {}".format(batch_idx, len(TestImgLoader), avg_test_scalars.mean()))
-#     if (not is_distributed) or (dist.get_rank() == 0):
-#         print("final", avg_test_scalars.mean())
-
-
-# def train_sample(model, model_loss, optimizer, sample, args):
-#     model.train()
-#     optimizer.zero_grad()
-
-#     sample_cuda = tocuda(sample)
-#     depth_gt_ms = sample_cuda["depth"]
-#     mask_ms = sample_cuda["mask"]
-
-#     num_stage = len([int(nd) for nd in args.ndepths.split(",") if nd])
-#     depth_gt = depth_gt_ms["stage{}".format(num_stage)]
-#     mask = mask_ms["stage{}".format(num_stage)]
-#     try:
-#         outputs = model(sample_cuda["imgs"], sample_cuda["proj_matrices"], sample_cuda["depth_values"], sample_cuda["normal"])
-#         depth_est = outputs["depth"]
-
-#         loss, depth_loss, epe, less1, less3 = model_loss(outputs, depth_gt_ms, mask_ms, sample_cuda["depth_interval"], dlossw=[float(e) for e in args.dlossw.split(",") if e])
-
-#         if np.isnan(loss.item()):
-#                 raise NanError
-
-#         if is_distributed and args.using_apex:
-#             with amp.scale_loss(loss, optimizer) as scaled_loss:
-#                 scaled_loss.backward()
-#         else:
-#             loss.backward()
-
-#         optimizer.step()
-
-#     except NanError:
-#             print(f'nan error accur!!')
-#             gc.collect()
-#             torch.cuda.empty_cache()
-
-#     scalar_outputs = {"loss": loss,
-#                         "depth_loss": depth_loss,
-#                         "epe": epe,
-#                         "less1":less1,
-#                         "less3":less3 }
-
-#     image_outputs = {"depth_est": depth_est * mask,
-#                         "depth_est_nomask": depth_est,
-#                         "depth_gt": sample["depth"]["stage1"],
-#                         "ref_img": sample["imgs"][:, 0],
-#                         "mask": sample["mask"]["stage1"],
-#                         "errormap": (depth_est - depth_gt).abs() * mask,
-#                         }
-
-
-#     if is_distributed:
-#         scalar_outputs = reduce_scalar_outputs(scalar_outputs)
-
-#     return tensor2float(scalar_outputs["loss"]), tensor2float(scalar_outputs), tensor2numpy(image_outputs)
-
-
-# @make_nograd_func
-# def test_sample_depth(model, model_loss, sample, args):
-#     if is_distributed:
-#         model_eval = model.module
-#     else:
-#         model_eval = model
-#     model_eval.eval()
-
-#     sample_cuda = tocuda(sample)
-#     depth_gt_ms = sample_cuda["depth"]
-#     mask_ms = sample_cuda["mask"]
-
-#     num_stage = len([int(nd) for nd in args.ndepths.split(",") if nd])
-#     depth_gt = depth_gt_ms["stage{}".format(num_stage)]
-#     mask = mask_ms["stage{}".format(num_stage)]
-
-#     outputs = model_eval(sample_cuda["imgs"], sample_cuda["proj_matrices"], sample_cuda["depth_values"], sample_cuda["normal"])
-#     depth_est = outputs["depth"]
-
-#     loss, depth_loss, epe, less1, less3 = model_loss(outputs, depth_gt_ms, mask_ms, sample_cuda["depth_interval"], dlossw=[float(e) for e in args.dlossw.split(",") if e])
-
-#     scalar_outputs = {"loss": loss,
-#                       "depth_loss": depth_loss,
-#                       "epe": epe,
-#                       "less1": less1,
-#                       "less3": less3
-#                     }
-
-#     image_outputs = {"depth_est": depth_est * mask,
-#                      "depth_est_nomask": depth_est,
-#                      "depth_gt": sample["depth"]["stage1"],
-#                      "ref_img": sample["imgs"][:, 0],
-#                      "mask": sample["mask"]["stage1"],
-#                      "errormap": (depth_est - depth_gt).abs() * mask}
-
-#     if is_distributed:
-#         scalar_outputs = reduce_scalar_outputs(scalar_outputs)
-
-#     return tensor2float(scalar_outputs["loss"]), tensor2float(scalar_outputs), tensor2numpy(image_outputs)
-
 def train(model, model_loss, optimizer, TrainImgLoader, TestImgLoader, start_epoch, args):
     milestones = [len(TrainImgLoader) * int(epoch_idx) for epoch_idx in args.lrepochs.split(':')[0].split(',')]
     lr_gamma = 1 / float(args.lrepochs.split(':')[1])
@@ -262,15 +79,8 @@ def train(model, model_loss, optimizer, TrainImgLoader, TestImgLoader, start_epo
             if (not is_distributed) or (dist.get_rank() == 0):
                 if do_summary:
                     save_scalars(logger, 'train', scalar_outputs, global_step)
-                    # print(
-                    #    "Epoch {}/{}, Iter {}/{}, lr {:.6f}, train loss = {:.3f}, depth loss = {:.3f}, entropy loss = {:.3f}, time = {:.3f}".format(
-                    #        epoch_idx, args.epochs, batch_idx, len(TrainImgLoader),
-                    #        optimizer.param_groups[0]["lr"], loss,
-                    #        scalar_outputs['depth_loss'],
-                    #        scalar_outputs['entropy_loss'],
-                    #        time.time() - start_time))
+                    save_images(logger, 'train', image_outputs, global_step)
                     print(
-                    #    "Epoch {}/{}, Iter {}/{}, lr {:.6f}, train loss = {:.3f}, depth loss = {:.3f}, entropy loss = {:.3f}, refined loss = {:.3f}, normal loss = {:.3f}, time = {:.3f}".format(
                        "Epoch {}/{}, Iter {}/{}, lr {:.6f}, train loss = {:.3f}, depth loss = {:.3f}, entropy loss = {:.3f}, refined loss = {:.3f}, time = {:.3f}".format(
                            epoch_idx, args.epochs, batch_idx, len(TrainImgLoader),
                            optimizer.param_groups[0]["lr"], loss,
@@ -302,15 +112,7 @@ def train(model, model_loss, optimizer, TrainImgLoader, TestImgLoader, start_epo
                 if (not is_distributed) or (dist.get_rank() == 0):
                     if do_summary:
                         save_scalars(logger, 'test', scalar_outputs, global_step)
-                        # save_images(logger, 'test', image_outputs, global_step)
-                        # print("Epoch {}/{}, Iter {}/{}, test loss = {:.3f}, depth loss = {:.3f}, entropy loss = {:.3f}, time = {:3f}".format(
-                        #                                                     epoch_idx, args.epochs,
-                        #                                                     batch_idx,
-                        #                                                     len(TestImgLoader), loss,
-                        #                                                     scalar_outputs["depth_loss"],
-                        #                                                     scalar_outputs['entropy_loss'],
-                        #                                                     time.time() - start_time))
-                        # print("Epoch {}/{}, Iter {}/{}, test loss = {:.3f}, depth loss = {:.3f}, entropy loss = {:.3f}, refined loss = {:.3f}, normal loss = {:.3f}, time = {:3f}".format(
+                        save_images(logger, 'test', image_outputs, global_step)
                         print("Epoch {}/{}, Iter {}/{}, test loss = {:.3f}, depth loss = {:.3f}, entropy loss = {:.3f}, refined loss = {:.3f}, time = {:3f}".format(
                                                                             epoch_idx, args.epochs,
                                                                             batch_idx,
@@ -318,7 +120,6 @@ def train(model, model_loss, optimizer, TrainImgLoader, TestImgLoader, start_epo
                                                                             scalar_outputs["depth_loss"],
                                                                             scalar_outputs['entropy_loss'],
                                                                             scalar_outputs['refined_loss'],
-                                                                            # scalar_outputs['normal_loss'],
                                                                             time.time() - start_time))
                     avg_test_scalars.update(scalar_outputs)
                     del scalar_outputs, image_outputs
@@ -338,8 +139,8 @@ def test(model, model_loss, TestImgLoader, args):
         avg_test_scalars.update(scalar_outputs)
         del scalar_outputs, image_outputs
         if (not is_distributed) or (dist.get_rank() == 0):
-            # print('Iter {}/{}, test loss = {:.3f}, time = {:3f}'.format(batch_idx, len(TestImgLoader), loss,
-            #                                                             time.time() - start_time))
+            print('Iter {}/{}, test loss = {:.3f}, time = {:3f}'.format(batch_idx, len(TestImgLoader), loss,
+                                                                        time.time() - start_time))
             if batch_idx % 100 == 0:
                 print("Iter {}/{}, test results = {}".format(batch_idx, len(TestImgLoader), avg_test_scalars.mean()))
     if (not is_distributed) or (dist.get_rank() == 0):
@@ -362,10 +163,7 @@ def train_sample(model, model_loss, optimizer, sample, args):
         outputs = model(sample_cuda["imgs"], sample_cuda["proj_matrices"], sample_cuda["depth_values"], sample_cuda["normal"])
         depth_est = outputs["depth"]
 
-        # loss, depth_loss, entropy_loss, depth_entropy = model_loss(outputs, depth_gt_ms, mask_ms, dlossw=[float(e) for e in args.dlossw.split(",") if e])
-        # loss, depth_loss, entropy_loss, depth_entropy, refined_loss = model_loss(outputs, depth_gt_ms, mask_ms, args.refine_only, args.main_only, dlossw=[float(e) for e in args.dlossw.split(",") if e])
         loss, depth_loss, entropy_loss, depth_entropy, refined_loss = model_loss(outputs, depth_gt_ms, mask_ms, dlossw=[float(e) for e in args.dlossw.split(",") if e])
-        # loss, depth_loss, entropy_loss, depth_entropy, refined_loss, normal_loss = model_loss(outputs, depth_gt_ms, mask_ms, dlossw=[float(e) for e in args.dlossw.split(",") if e])
 
         if np.isnan(loss.item()):
                 raise NanError
@@ -387,7 +185,6 @@ def train_sample(model, model_loss, optimizer, sample, args):
                       "depth_loss": depth_loss,
                       "entropy_loss": entropy_loss,
                       "refined_loss": refined_loss,
-                    #   "normal_loss": normal_loss,
                       "abs_depth_error": AbsDepthError_metrics(depth_est, depth_gt, mask > 0.5),
                       "thres2mm_error": Thres_metrics(depth_est, depth_gt, mask > 0.5, 2),
                       "thres4mm_error": Thres_metrics(depth_est, depth_gt, mask > 0.5, 4),
@@ -426,17 +223,13 @@ def test_sample_depth(model, model_loss, sample, args):
     outputs = model_eval(sample_cuda["imgs"], sample_cuda["proj_matrices"], sample_cuda["depth_values"], sample_cuda["normal"])
     depth_est = outputs["depth"]
 
-    # loss, depth_loss, entropy_loss, depth_entropy = model_loss(outputs, depth_gt_ms, mask_ms, dlossw=[float(e) for e in args.dlossw.split(",") if e])
-    # loss, depth_loss, entropy_loss, depth_entropy, refined_loss = model_loss(outputs, depth_gt_ms, mask_ms, args.refine_only, args.main_only, dlossw=[float(e) for e in args.dlossw.split(",") if e])
-    # loss, depth_loss, entropy_loss, depth_entropy, refined_loss = model_loss(outputs, depth_gt_ms, mask_ms, dlossw=[float(e) for e in args.dlossw.split(",") if e])
-    # loss, depth_loss, entropy_loss, depth_entropy, refined_loss, normal_loss = model_loss(outputs, depth_gt_ms, mask_ms, dlossw=[float(e) for e in args.dlossw.split(",") if e])
+    loss, depth_loss, entropy_loss, depth_entropy, refined_loss = model_loss(outputs, depth_gt_ms, mask_ms, dlossw=[float(e) for e in args.dlossw.split(",") if e])
 
     scalar_outputs = {
-                    #   "loss": loss,
-                    #   "depth_loss": depth_loss,
-                    #   "entropy_loss": entropy_loss,
-                    #   "refined_loss": refined_loss,
-                    #   "normal_loss": normal_loss,
+                      "loss": loss,
+                      "depth_loss": depth_loss,
+                      "entropy_loss": entropy_loss,
+                      "refined_loss": refined_loss,
                       "abs_depth_error": AbsDepthError_metrics(depth_est, depth_gt, mask > 0.5),
                       "thres2mm_error": Thres_metrics(depth_est, depth_gt, mask > 0.5, 2),
                       "thres4mm_error": Thres_metrics(depth_est, depth_gt, mask > 0.5, 4),
@@ -452,18 +245,17 @@ def test_sample_depth(model, model_loss, sample, args):
                       "thres>20mm_abserror": AbsDepthError_metrics(depth_est, depth_gt, mask > 0.5, [20.0, 1e5]),
                     }
 
-    # image_outputs = {"depth_est": depth_est * mask,
-    #                  "depth_est_nomask": depth_est,
-    #                  "depth_gt": sample["depth"]["stage1"],
-    #                  "ref_img": sample["imgs"][:, 0],
-    #                  "mask": sample["mask"]["stage1"],
-    #                  "errormap": (depth_entropy - depth_gt).abs() * mask}
+    image_outputs = {"depth_est": depth_est * mask,
+                     "depth_est_nomask": depth_est,
+                     "depth_gt": sample["depth"]["stage1"],
+                     "ref_img": sample["imgs"][:, 0],
+                     "mask": sample["mask"]["stage1"],
+                     "errormap": (depth_entropy - depth_gt).abs() * mask}
 
-    # if is_distributed:
-    #     scalar_outputs = reduce_scalar_outputs(scalar_outputs)
+    if is_distributed:
+        scalar_outputs = reduce_scalar_outputs(scalar_outputs)
 
-    # return tensor2float(scalar_outputs["loss"]), tensor2float(scalar_outputs), tensor2numpy(image_outputs)
-    return None, tensor2float(scalar_outputs), None
+    return tensor2float(scalar_outputs["loss"]), tensor2float(scalar_outputs), tensor2numpy(image_outputs)
 
 def profile():
     warmup_iter = 5
@@ -542,7 +334,7 @@ if __name__ == '__main__':
         print_args(args)
 
     # model, optimizer
-    model = CasMVS(ndepths=[int(nd) for nd in args.ndepths.split(",") if nd],
+    model = GAPMVSNet(ndepths=[int(nd) for nd in args.ndepths.split(",") if nd],
                           depth_interals_ratio=[float(d_i) for d_i in args.depth_inter_r.split(",") if d_i],
                           cr_base_chs=[int(ch) for ch in args.cr_base_chs.split(",") if ch],
                           grad_method=args.grad_method,

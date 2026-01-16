@@ -61,6 +61,11 @@ is_distributed = num_gpus > 1
 
 # main function
 def train(model, model_loss, optimizer, TrainImgLoader, TestImgLoader, start_epoch, args):
+    # milestones = [len(TrainImgLoader) * int(epoch_idx) * int(args.batch_size) for epoch_idx in args.lrepochs.split(':')[0].split(',')]
+    # lr_gamma = 1 / float(args.lrepochs.split(':')[1])
+    # lr_scheduler = WarmupMultiStepLR(optimizer, milestones, gamma=lr_gamma, warmup_factor=1.0/3, warmup_iters=int(500 / int(args.batch_size)),
+    #                                                     last_epoch=len(TrainImgLoader) * start_epoch * int(args.batch_size) - 1)
+                                            
     milestones = [len(TrainImgLoader) * int(epoch_idx) for epoch_idx in args.lrepochs.split(':')[0].split(',')]
     lr_gamma = 1 / float(args.lrepochs.split(':')[1])
     lr_scheduler = WarmupMultiStepLR(optimizer, milestones, gamma=lr_gamma, warmup_factor=1.0/3, warmup_iters=500,
@@ -171,8 +176,14 @@ def train_sample(model, model_loss, optimizer, sample, args):
         if is_distributed and args.using_apex:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
                 scaled_loss.backward()
+            torch.nn.utils.clip_grad_norm_(
+                amp.master_params(optimizer), max_norm=1.0
+            )
         else:
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(
+                model.parameters(), max_norm=1.0
+            )
         
         optimizer.step()
 

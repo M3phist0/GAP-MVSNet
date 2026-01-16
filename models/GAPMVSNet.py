@@ -121,24 +121,32 @@ class GAPMVSNet(nn.Module):
                 outputs_stage, view_weights = self.DepthNet(
                         features_stage,
                         proj_matrices_stage,
-                        depth_values=F.interpolate(depth_range_samples.unsqueeze(1), [self.ndepths[stage_idx], img.shape[2]//int(stage_scale), img.shape[3]//int(stage_scale)], mode='trilinear', align_corners=Align_Corners_Range).squeeze(1),
+                        depth_values=F.interpolate(
+                                depth_range_samples.unsqueeze(1), 
+                                [self.ndepths[stage_idx], img.shape[2]//int(stage_scale), img.shape[3]//int(stage_scale)], 
+                                mode='trilinear', align_corners=Align_Corners_Range
+                            ).squeeze(1),
                         num_depth=self.ndepths[stage_idx],
                         normal=normal_stage,
                         stage_intric=stage_ref_int,
                         cost_regularization=self.cost_regularization[stage_idx], 
                         view_weights=view_weights,
-                        )
+                    )
             else:
                 outputs_stage = self.DepthNet(
                         features_stage,
                         proj_matrices_stage,
-                        depth_values=F.interpolate(depth_range_samples.unsqueeze(1), [self.ndepths[stage_idx], img.shape[2]//int(stage_scale), img.shape[3]//int(stage_scale)], mode='trilinear', align_corners=Align_Corners_Range).squeeze(1),
+                        depth_values=F.interpolate(
+                                depth_range_samples.unsqueeze(1), 
+                                [self.ndepths[stage_idx], img.shape[2]//int(stage_scale), img.shape[3]//int(stage_scale)],
+                                mode='trilinear', align_corners=Align_Corners_Range
+                            ).squeeze(1),
                         num_depth=self.ndepths[stage_idx],
                         normal=normal_stage,
                         stage_intric=stage_ref_int,
                         cost_regularization=self.cost_regularization[stage_idx], 
                         view_weights=view_weights,
-                        )
+                    )
 
             wta_index_map = torch.argmax(outputs_stage['prob_volume'], dim=1, keepdim=True).type(torch.long)
             depth = torch.gather(outputs_stage['depth_values'], 1, wta_index_map).squeeze(1)
@@ -265,7 +273,6 @@ class VisDepthNet(nn.Module):
 
         cost_reg = cost_regularization(similarity, depth_values, normal)
         # cost_reg = cost_regularization(similarity)
-        # cost_reg = cost_regularization(similarity, ref_feature)
         prob_volume_pre = cost_reg.squeeze(1)
 
         if prob_volume_init is not None:

@@ -17,10 +17,6 @@ from multiprocessing import Pool
 from functools import partial
 from open3d import open3d_filter
 
-from pytorch_grad_cam import GradCAM
-from pytorch_grad_cam.utils.image import show_cam_on_image, scale_cam_image
-from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
-
 cudnn.benchmark = True
 
 parser = argparse.ArgumentParser(description='Predict depth, filter, and fuse')
@@ -220,17 +216,17 @@ def save_scene_depth(testlist):
                 depth_color_1 = visualize_depth(depth_1)
                 depth_color_2 = visualize_depth(depth_2)
                 depth_color = visualize_depth(depth_est)
-                cv2.imwrite(os.path.join(args.outdir, filename.format('depth_est', '_1.png')), depth_color_1)
-                cv2.imwrite(os.path.join(args.outdir, filename.format('depth_est', '_2.png')), depth_color_2)
+                # cv2.imwrite(os.path.join(args.outdir, filename.format('depth_est', '_1.png')), depth_color_1)
+                # cv2.imwrite(os.path.join(args.outdir, filename.format('depth_est', '_2.png')), depth_color_2)
                 cv2.imwrite(os.path.join(args.outdir, filename.format('depth_est', '.png')), depth_color)
                 #save confidence maps
                 save_pfm(confidence_filename, conf_final)
-                save_pfm(os.path.join(args.outdir, filename.format('confidence', '_1.pfm')), conf_1)
-                save_pfm(os.path.join(args.outdir, filename.format('confidence', '_2.pfm')), conf_2)
-                save_pfm(os.path.join(args.outdir, filename.format('confidence', '_3.pfm')), photometric_confidence)
-                cv2.imwrite(os.path.join(args.outdir, filename.format('confidence', '_3.png')), visualize_depth(photometric_confidence))
-                cv2.imwrite(os.path.join(args.outdir, filename.format('confidence', '_1.png')),visualize_depth(conf_1))
-                cv2.imwrite(os.path.join(args.outdir, filename.format('confidence', '_2.png')),visualize_depth(conf_2))
+                # save_pfm(os.path.join(args.outdir, filename.format('confidence', '_1.pfm')), conf_1)
+                # save_pfm(os.path.join(args.outdir, filename.format('confidence', '_2.pfm')), conf_2)
+                # save_pfm(os.path.join(args.outdir, filename.format('confidence', '_3.pfm')), photometric_confidence)
+                # cv2.imwrite(os.path.join(args.outdir, filename.format('confidence', '_3.png')), visualize_depth(photometric_confidence))
+                # cv2.imwrite(os.path.join(args.outdir, filename.format('confidence', '_1.png')),visualize_depth(conf_1))
+                # cv2.imwrite(os.path.join(args.outdir, filename.format('confidence', '_2.png')),visualize_depth(conf_2))
                 cv2.imwrite(os.path.join(args.outdir, filename.format('confidence', '_final.png')),visualize_depth(conf_final))
                 #save cams, img
                 write_cam(cam_filename, cam)

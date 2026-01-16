@@ -160,7 +160,6 @@ def filter_depth(scan_folder, out_folder, pair_path, plyfilename, photo_threshol
         confidence1 = read_pfm(os.path.join(scan_folder, 'confidence/{:0>8}_1.pfm'.format(ref_view)))[0]
         confidence2 = read_pfm(os.path.join(scan_folder, 'confidence/{:0>8}_2.pfm'.format(ref_view)))[0]
 
-
         scale=float(confidence.shape[0])/ref_img.shape[0]
         index=int((int(ref_img.shape[1]*scale)-confidence.shape[1])/2)
         index_p=(int(ref_img.shape[1]*scale)-confidence.shape[1])-index
@@ -185,10 +184,7 @@ def filter_depth(scan_folder, out_folder, pair_path, plyfilename, photo_threshol
         photo_mask1 = confidence1 > photo_threshold[1] # stage1
         photo_mask2 = confidence2 > photo_threshold[0]  # stage 0
         
-        
         photo_mask = np.logical_and(np.logical_and(photo_mask0, photo_mask1), photo_mask2)
-
-
 
         all_srcview_depth_ests = []
 

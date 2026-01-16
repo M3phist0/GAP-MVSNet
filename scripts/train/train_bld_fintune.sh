@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
-MVS_TRAINING="/mnt/sharedisk/chenkehua/BlendedMVS/dataset_low_res/"  # path to BlendedMVS dataset
-CKPT="outputs/dtu_training_final/model_000008.ckpt" # path to checkpoint
-NORMAL_PATH="/mnt/sharedisk/chenkehua/networks/Lotus/output/bldtrain_raw/"
+MVS_TRAINING="/root/gpufree-data/BlendedMVS/dataset_low_res/"  # path to BlendedMVS dataset
+CKPT="outputs/dtu_training/model_000010.ckpt" # path to checkpoint
+NORMAL_PATH="MoGe/bld_normal"
 LOG_DIR="outputs/bld_finetune"
 if [ ! -d $LOG_DIR ]; then
 	mkdir -p $LOG_DIR
 fi
 
-
 NGPUS=4
 BATCH_SIZE=1
-CUDA_VISIBLE_DEVICES=4,5,6,7 python -m torch.distributed.launch --nproc_per_node=$NGPUS finetune.py \
+CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=$NGPUS finetune.py \
 --logdir=$LOG_DIR \
 --dataset=bld_train \
 --trainpath=$MVS_TRAINING \
@@ -27,6 +26,7 @@ CUDA_VISIBLE_DEVICES=4,5,6,7 python -m torch.distributed.launch --nproc_per_node
 --lrepochs="6,10,14:2" \
 --epochs=16 \
 --mode="train" \
+--resume \
 --trainlist=lists/bld/training_list.txt \
 --testlist=lists/bld/validation_list.txt \
 --numdepth=192 ${@:3} | tee -a $LOG_DIR/log.txt # > trainbld.log 2>&1 &

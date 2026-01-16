@@ -227,7 +227,7 @@ def load_data(root_path, depth_path, scene_name, thresh, device):
         img_filename = "{}/{}/images/{:08d}.jpg".format(depth_path, scene_name, view)
         cam_filename = "{}/{}/cams/{:08d}_cam.txt".format(depth_path, scene_name, view)
         depth_filename = "{}/{}/depth_est/{:08d}.pfm".format(depth_path, scene_name, view)
-        confidence_filename = "{}/{}/confidence/{:08d}_3.pfm".format(depth_path, scene_name, view)
+        confidence_filename = "{}/{}/confidence/{:08d}.pfm".format(depth_path, scene_name, view)
 
 
         extr_mat, intr_mat = parse_cameras(cam_filename)

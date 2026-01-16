@@ -23,7 +23,7 @@ class MVSDataset(Dataset):
         assert self.mode in ["train", "val", "test"]
         self.metas = self.build_list()
         
-        self.color_augment = transforms.ColorJitter(brightness=0.5, contrast=0.5)
+        # self.color_augment = transforms.ColorJitter(brightness=0.5, contrast=0.5)
 
     def build_list(self):
         metas = []
@@ -65,8 +65,8 @@ class MVSDataset(Dataset):
 
     def read_img(self, filename):
         img = Image.open(filename)
-        if self.mode == 'train':
-            img = self.color_augment(img)
+        # if self.mode == 'train':
+        #     img = self.color_augment(img)
         # scale 0~255 to 0~1
         np_img = np.array(img, dtype=np.float32) / 255.
         return np_img
@@ -129,6 +129,21 @@ class MVSDataset(Dataset):
         normal = (normal - 0.5)*2
         return normal
 
+    def valid_mask_by_norm(self, n: np.ndarray, eps=1e-6):
+        finite = np.all(np.isfinite(n), axis=2)
+        length = np.linalg.norm(n, axis=2)
+        invalid = (~finite) | (length < eps)
+        valid = (~invalid).astype(np.float32)
+
+        h, w = valid.shape
+        np_val_ms = {
+            "stage1": cv2.resize(valid, (w//4, h//4), interpolation=cv2.INTER_NEAREST),
+            "stage2": cv2.resize(valid, (w//2, h//2), interpolation=cv2.INTER_NEAREST),
+            "stage3": valid,
+        }
+
+        return np_val_ms
+
     def __getitem__(self, idx):
         meta = self.metas[idx]
         scan, light_idx, ref_view, src_views = meta
@@ -163,11 +178,15 @@ class MVSDataset(Dataset):
             proj_matrices.append(proj_mat)
 
             if i == 0:  # reference view
-                normal_path =  os.path.join(self.normal_path , '{}_train/{:0>6}_normal.npy'.format(
-                    scan, vid))
+                normal_path =  os.path.join(self.normal_path , '{}_train/{:0>6}_{}_normal.npy'.format(
+                    scan, vid, light_idx))
                 normal = self.read_normal(normal_path)
                 mask_read_ms = self.read_mask_hr(mask_filename_hr)
                 depth_ms = self.read_depth_hr(depth_filename_hr)
+                valid_ms = self.valid_mask_by_norm(normal)
+                mask_read_ms["stage1"] = mask_read_ms["stage1"] * valid_ms["stage1"]
+                mask_read_ms["stage2"] = mask_read_ms["stage2"] * valid_ms["stage2"]
+                mask_read_ms["stage3"] = mask_read_ms["stage3"] * valid_ms["stage3"]
 
                 #get depth values
                 depth_max = depth_interval * self.ndepths + depth_min
@@ -177,8 +196,7 @@ class MVSDataset(Dataset):
                 
             if self.use_normals:
                 if i != 0:
-                    normal_path =  os.path.join(self.normal_path , '{}_train/{:0>6}_normal.npy'.format(
-                    scan, vid))
+                    normal_path =  os.path.join(self.normal_path , '{}_train/{:0>6}_normal.npy'.format(scan, vid))
                     normal = self.read_normal(normal_path)
                 normal = normal.astype(np.float32)
                 if normal.shape[-1] == 3:
