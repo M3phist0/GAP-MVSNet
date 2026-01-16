@@ -110,7 +110,7 @@ def run(args: argparse.Namespace) -> None:
         out_scan_dir = out_root / f"{scan}"
         ensure_dir(out_scan_dir)
 
-        img_folder = os.path.join(args.datapath, f"{scan}/blended_images")
+        img_folder = os.path.join(args.datapath, f"{scan}/images")
         cam_folder = os.path.join(args.datapath, f"{scan}/cams")
 
         for name in os.listdir(img_folder):
@@ -176,10 +176,8 @@ def build_parser() -> argparse.ArgumentParser:
         description="Run MoGeModel normal inference on DTU images with progress bar and structured outputs."
     )
     parser.add_argument("--pt_path", type=str, default="models/moge-2-vitl-normal.pt")
-    parser.add_argument("--listfile", type=str, default="/root/gpufree-data/tanksandtemples")
     parser.add_argument("--datapath", type=str, default="/root/gpufree-data/tanksandtemples")
     parser.add_argument("--out_dir", "-o", type=str, required=True)
-    parser.add_argument("--num_views", type=int, default=49)
     parser.add_argument("--visualize", action="store_true", help="If set, save visualization images")
 
     return parser
