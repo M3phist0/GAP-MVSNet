@@ -62,8 +62,7 @@ tanksandtemples
 
 For convenience, we adopt [MoGe-2](https://github.com/microsoft/MoGe) for surface normal estimation in place of [Lotus](https://github.com/EnVision-Research/Lotus), and provide a new script to generate the following normal files.  
 
-The pretrained model weights should be downloaded from [moge-2-vitl-normal](https://huggingface.co/Ruicheng/moge-2-vitl-normal/blob/main/model.pt)  
-and placed in the `MoGe/models` directory prior to execution.
+The pretrained model weights should be downloaded from [moge-2-vitl-normal](https://huggingface.co/Ruicheng/moge-2-vitl-normal/blob/main/model.pt) and placed in the `MoGe/models` directory prior to execution.
 
 ```
 dtu_normal
@@ -134,7 +133,7 @@ cd ..
 bash scripts/train/train_bld_fintune.sh
 ```
 
-### TNT
+### Tanks and Temples
 ```bash
 cd MoGe
 bash MoGe/tnt_normal.sh
