@@ -145,6 +145,16 @@ bash scripts/test/dynamic_fusion.sh
 
 ## Citation
 
+```
+@article{chen2025learning,
+  title={Learning multi-view stereo with geometry-aware prior},
+  author={Chen, Kehua and Yuan, Zhenlong and Xiao, Haihong and Mao, Tianlu and Wang, Zhaoqi},
+  journal={IEEE Transactions on Circuits and Systems for Video Technology},
+  year={2025},
+  publisher={IEEE}
+}
+```
+
 ## Acknowledgements
 Our work is partially baed on these opening source MVS work: [CasMVSNet](https://github.com/alibaba/cascade-stereo/tree/master), [GoMVS](https://github.com/Wuuu3511/GoMVS).
 
