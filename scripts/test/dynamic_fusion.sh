@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-TESTPATH="path/to/TanksAndTemples/intermediate" # path to dataset
-#TESTPATH="path/to//TanksAndTemples/advanced" # path to dataset
+TESTPATH="data/TanksAndTemples/intermediate" # path to dataset
+#TESTPATH="data/TanksAndTemples/advanced" # path to dataset
 TESTLIST="lists/tnt/inter.txt"					  # path to data_list
 #TESTLIST="lists/tnt/adv.txt"					  # path to data_list
 OUTDIR="outputs/tnt_testing" 					# path to save the results

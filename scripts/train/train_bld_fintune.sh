@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-MVS_TRAINING="/root/gpufree-data/BlendedMVS/dataset_low_res/"  # path to BlendedMVS dataset
+MVS_TRAINING="data/BlendedMVS/dataset_low_res"  # path to BlendedMVS dataset
 CKPT="outputs/dtu_training/model_000010.ckpt" # path to checkpoint
 NORMAL_PATH="MoGe/bld_normal"
 LOG_DIR="outputs/bld_finetune"

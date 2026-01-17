@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-TESTPATH="/root/gpufree-data/dtu" 						# path to dataset dtu_test
+TESTPATH="data/dtu" 						# path to dataset dtu_test
 TESTLIST="lists/dtu/test.txt"							# path to data_list
-NORMALPATH="dtu_normal"
-CKPT_FILE="/root/gpufree-data/GAP-MVSNet/outputs/dtu_training/model_000010.ckpt"	    # path to checkpoint file
-OUTDIR="./outputs/dtu_test" 						  # path to output
+NORMALPATH="MoGe/dtu_normal"
+CKPT_FILE="outputs/dtu_training/model_000010.ckpt"	    # path to checkpoint file
+OUTDIR="outputs/dtu_test1" 						  # path to output
 if [ ! -d $OUTDIR ]; then
 	mkdir -p $OUTDIR
 fi

@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
-#TESTPATH="path/to/TanksAndTemples/intermediate" # path to dataset
-TESTPATH="path/to/TanksAndTemples/advanced" # path to dataset
+
+#TESTPATH="data/tankandtemples/intermediate" # path to dataset
 #TESTLIST="lists/tnt/inter.txt"
+# NORMAL_PATH="MoGe/tnt_normal/intermediate" 			
+
+TESTPATH="data/tankandtemples/advanced" # path to dataset
 TESTLIST="lists/tnt/adv.txt"
-NORMAL_PATH="path/to/tnt_normal/" 												
-CKPT_FILE="path/to/ckpt" 		    # path to checkpoint
-OUTDIR="outputs/tnt_testing/" 									# path to save the results
+NORMAL_PATH="MoGe/tnt_normal/advanced" 	
+											
+CKPT_FILE="outputs/bld_finetune/model_000015.ckpt" 		    # path to checkpoint
+OUTDIR="outputs/tnt_testing" 									# path to save the results
+
 if [ ! -d $OUTDIR ]; then
 	mkdir -p $OUTDIR
 fi
 
-CUDA_VISIBLE_DEVICES=6 python test.py \
+CUDA_VISIBLE_DEVICES=0 python test.py \
 --max_h 960 \
 --max_w 1920 \
 --dataset=tnt_eval \

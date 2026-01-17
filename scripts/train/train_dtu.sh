@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-MVS_TRAINING="/root/gpufree-data/dtu_training/mvs_training/dtu" # path to dataset mvs_training
-NORMAL_PATH="/root/gpufree-data/GAP-MVSNet/MoGe/dtu_normal"
+MVS_TRAINING="data/dtu_training/mvs_training/dtu" # path to dataset mvs_training
+NORMAL_PATH="MoGe/dtu_normal"
 LOG_DIR="./outputs/dtu_training" # path to checkpoints
 if [ ! -d $LOG_DIR ]; then
 	mkdir -p $LOG_DIR
