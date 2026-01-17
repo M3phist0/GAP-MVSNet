@@ -95,9 +95,9 @@ The structure of the TNT normal data is as follows:
 ```
 tnt_normal
  ├── advanced
-      ├── Auditorium         
-      ├── ...    
- ├── intermediate
+ |    ├── Auditorium         
+ |    ├── ...    
+ └── intermediate
       ├── Family
       ├── ... 
       |    ├── 000000_normal.npy         
