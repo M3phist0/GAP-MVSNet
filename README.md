@@ -94,13 +94,15 @@ bld_normal
 The structure of the TNT normal data is as follows:
 ```
 tnt_normal
- ├── Auditorium         
- ├── ...    
- ├── Family
- ├── ... 
- |    ├── 000000_normal.npy         
- │    ├── 000000_normal.png
- |    ├── ...
+ ├── advanced
+      ├── Auditorium         
+      ├── ...    
+ ├── intermediate
+      ├── Family
+      ├── ... 
+      |    ├── 000000_normal.npy         
+      │    ├── 000000_normal.png
+      |    ├── ...
 ```
 
 ## Running Instructions
