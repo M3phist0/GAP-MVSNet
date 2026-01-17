@@ -1,7 +1,7 @@
 # GAP-MVSNet
 
 ## Overview
-GAP-MVSNet: Learning Multi-View Stereo with Geometry-Aware Prior
+GAP-MVSNet: Learning Multi-View Stereo with Geometry-Aware Prior. [Paper Link](https://ieeexplore.ieee.org/document/11029471)
 
 ![](assets/overview.png)
 
