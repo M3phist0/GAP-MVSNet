@@ -26,7 +26,6 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node
 --lrepochs="6,10,14:2" \
 --epochs=16 \
 --mode="train" \
---resume \
 --trainlist=lists/bld/training_list.txt \
 --testlist=lists/bld/validation_list.txt \
 --numdepth=192 ${@:3} | tee -a $LOG_DIR/log.txt # > trainbld.log 2>&1 &
